@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MotoRota — Delivery System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+:root {
+  --vermelho: #e8321a;
+  --laranja: #ff6b00;
+  --amarelo: #ffd600;
+  --escuro: #0d0d0d;
+  --cinza-escuro: #161616;
+  --cinza-medio: #222222;
+  --cinza-claro: #333333;
+  --texto: #f0ede8;
+  --texto-muted: #777;
+  --verde: #3ddc84;
+  --azul: #4da6ff;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--escuro);
+  color: var(--texto);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── TOPBAR ─── */
+.topbar {
+  background: var(--cinza-escuro);
+  border-bottom: 2px solid var(--cinza-claro);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 500;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 3px;
+  color: var(--amarelo);
+  text-shadow: 2px 2px 0 var(--vermelho);
+  padding: 16px 0;
+  margin-right: 40px;
+  flex-shrink: 0;
+}
+
+.tabs { display: flex; height: 100%; }
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--texto-muted);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 2px;
+  padding: 18px 28px;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--texto); }
+.tab-btn.active { color: var(--amarelo); border-bottom-color: var(--vermelho); }
+
+/* ─── PAGES ─── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ─── HERO ─── */
+.hero {
+  background: var(--cinza-escuro);
+  border-bottom: 3px solid var(--vermelho);
+  padding: 28px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  position: absolute; right: 40px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 110px; opacity: 0.06; pointer-events: none;
+}
+.restaurante-hero::before { content: '🍔'; }
+.motoboy-hero::before     { content: '🏍️'; }
+
+.hero-tag {
+  display: inline-block;
+  background: var(--vermelho); color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 2px; font-size: 11px;
+  padding: 3px 10px; border-radius: 4px; margin-bottom: 10px;
+}
+.hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px; letter-spacing: 3px; line-height: 1;
+  color: var(--amarelo); text-shadow: 3px 3px 0 var(--vermelho); margin-bottom: 8px;
+}
+.hero p { color: var(--texto-muted); font-size: 14px; max-width: 500px; line-height: 1.6; }
+
+/* ─── LAYOUT ─── */
+.page-body { padding: 28px 40px; display: flex; flex-direction: column; gap: 24px; }
+.row { display: grid; gap: 24px; }
+.row-2col { grid-template-columns: 340px 1fr; }
+.row-mapa { grid-template-columns: 300px 1fr; }
+
+/* ─── CARD ─── */
+.card {
+  background: var(--cinza-escuro);
+  border: 1px solid var(--cinza-claro);
+  border-radius: 14px; padding: 24px;
+}
+.card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 2px;
+  color: var(--amarelo); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ─── FORM ─── */
+.input-group { display: flex; flex-direction: column; margin-bottom: 12px; }
+.input-group:last-child { margin-bottom: 0; }
+
+label {
+  font-size: 11px; font-weight: 700;
+  color: var(--texto-muted); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 6px;
+}
+
+input, select {
+  background: var(--cinza-medio);
+  border: 1px solid var(--cinza-claro);
+  border-radius: 8px; color: var(--texto);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; padding: 11px 14px;
+  transition: border-color 0.2s; outline: none; width: 100%;
+}
+input:focus, select:focus { border-color: var(--laranja); }
+input::placeholder { color: #444; }
+select option { background: var(--cinza-medio); }
+
+.row-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ─── BOTÕES ─── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; border: none; border-radius: 10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; letter-spacing: 2px; padding: 13px 20px;
+  cursor: pointer; transition: all 0.2s; width: 100%;
+}
+.btn-primary { background: var(--vermelho); color: #fff; }
+.btn-primary:hover { background: #c82a12; transform: translateY(-1px); }
+.btn-secondary { background: var(--cinza-claro); color: var(--texto); }
+.btn-secondary:hover { background: #444; }
+.btn-verde { background: var(--verde); color: #000; }
+.btn-verde:hover { background: #30c070; transform: translateY(-1px); }
+.btn-azul { background: var(--azul); color: #000; }
+.btn-azul:hover { background: #3a90e0; }
+.btn-laranja { background: var(--laranja); color: #000; }
+.btn-laranja:hover { background: #e05a00; }
+.btn-sm { font-size: 13px; padding: 7px 14px; border-radius: 7px; width: auto; letter-spacing: 1px; }
+.btn-danger { background: var(--vermelho); color: #fff; }
+.btn-danger:hover { background: #c82a12; }
+
+/* ─── TABELA ─── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: var(--cinza-medio); }
+th {
+  padding: 10px 14px; text-align: left;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--texto-muted); border-bottom: 2px solid var(--cinza-claro);
+}
+td { padding: 11px 14px; border-bottom: 1px solid var(--cinza-claro); vertical-align: middle; }
+tbody tr:hover { background: var(--cinza-medio); }
+
+.badge {
+  display: inline-block; background: var(--cinza-medio);
+  border: 1px solid var(--cinza-claro); border-radius: 5px;
+  padding: 2px 7px; font-size: 11px; color: var(--texto-muted);
+}
+.lucro-val { font-weight: 700; color: var(--verde); }
+.nome-cell { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+
+/* ─── MAPA ─── */
+.mapa-container {
+  width: 100%; height: 420px;
+  border-radius: 12px; border: 1px solid var(--cinza-claro);
+  overflow: hidden;
+}
+
+/* ─── PONTOS ─── */
+.ponto-item {
+  padding: 8px 12px; background: var(--cinza-medio);
+  border-radius: 7px; font-size: 12px;
+  display: flex; align-items: flex-start; gap: 8px; line-height: 1.4;
+}
+.ponto-num {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px;
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ponto-R { background: var(--vermelho); color: #fff; }
+.ponto-D { background: var(--verde); color: #000; }
+
+/* ─── DIST INFO ─── */
+.dist-info {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px; color: var(--amarelo); letter-spacing: 1px;
+}
+.tempo-info {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; color: var(--azul); letter-spacing: 1px;
+}
+.preco-info {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px; color: var(--verde); letter-spacing: 1px;
+}
+
+/* ─── RESULTADO OTIMIZAÇÃO ─── */
+.resultado {
+  display: none;
+  background: var(--cinza-escuro);
+  border: 1px solid var(--cinza-claro);
+  border-top: 4px solid var(--verde);
+  border-radius: 12px; padding: 24px;
+  animation: slideIn 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes slideIn {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.resultado.erro { border-top-color: var(--vermelho); }
+.resultado h2 { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 2px; color: var(--verde); }
+.resultado.erro h2 { color: var(--vermelho); }
+.resultado-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px; margin-bottom: 18px;
+}
+.stat-box { background: var(--cinza-medio); border: 1px solid var(--cinza-claro); border-radius: 10px; padding: 12px 14px; }
+.stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--texto-muted); margin-bottom: 4px; font-weight: 700; }
+.stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--amarelo); line-height: 1; }
+.stat-sub { font-size: 11px; color: var(--texto-muted); margin-top: 2px; }
+
+.progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--texto-muted); margin-bottom: 5px; }
+.progress-bar { height: 7px; background: var(--cinza-claro); border-radius: 99px; overflow: hidden; margin-bottom: 12px; }
+.progress-fill { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.22,1,0.36,1); }
+.fill-peso { background: linear-gradient(90deg, var(--laranja), var(--amarelo)); }
+.fill-vol  { background: linear-gradient(90deg, var(--vermelho), var(--laranja)); }
+
+.itens-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; color: var(--texto); margin: 14px 0 10px; }
+.item-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 13px; background: var(--cinza-medio);
+  border: 1px solid var(--cinza-claro); border-radius: 9px; margin-bottom: 7px;
+  flex-wrap: wrap; gap: 8px;
+}
+.item-row-left { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 13px; }
+.item-row-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.qtd-badge { background: var(--vermelho); color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 14px; padding: 2px 9px; border-radius: 5px; }
+.meta-chip { font-size: 11px; color: var(--texto-muted); background: var(--cinza-escuro); border: 1px solid var(--cinza-claro); padding: 3px 7px; border-radius: 5px; }
+.lucro-chip { font-weight: 700; font-size: 13px; color: var(--verde); }
+
+/* ─── ROTA CARD (motoboy) ─── */
+.rota-card {
+  background: var(--cinza-medio);
+  border: 1px solid var(--cinza-claro);
+  border-left: 4px solid var(--laranja);
+  border-radius: 10px; padding: 18px;
+  display: flex; flex-direction: column; gap: 12px;
+  margin-bottom: 12px;
+}
+.rota-card.aceita    { border-left-color: var(--verde); }
+.rota-card.entregue  { border-left-color: var(--azul); opacity: 0.75; }
+.rota-card.cancelada { border-left-color: var(--vermelho); opacity: 0.6; }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; padding: 4px 12px;
+  border-radius: 20px; letter-spacing: 0.5px; width: fit-content;
+}
+.status-aguardando { background: rgba(255,107,0,0.15); color: var(--laranja); border: 1px solid var(--laranja); }
+.status-aceita     { background: rgba(61,220,132,0.15); color: var(--verde); border: 1px solid var(--verde); }
+.status-entregue   { background: rgba(77,166,255,0.15); color: var(--azul); border: 1px solid var(--azul); }
+.status-cancelada  { background: rgba(232,50,26,0.15); color: var(--vermelho); border: 1px solid var(--vermelho); }
+
+/* ─── EMPTY ─── */
+.empty { text-align: center; padding: 36px 20px; color: var(--texto-muted); font-size: 14px; }
+.empty-icon { font-size: 38px; margin-bottom: 10px; }
+
+/* ─── PEDIDOS ─── */
+.pedido-item-selector {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 13px; background: var(--cinza-medio);
+  border: 1px solid var(--cinza-claro); border-radius: 9px; margin-bottom: 7px;
+  gap: 10px;
+}
+.pedido-item-selector-left { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 13px; flex: 1; }
+.qtd-controls { display: flex; align-items: center; gap: 6px; }
+.qtd-btn {
+  background: var(--cinza-claro); color: var(--texto);
+  border: none; border-radius: 6px;
+  width: 28px; height: 28px;
+  font-size: 16px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.qtd-btn:hover { background: var(--vermelho); }
+.qtd-display {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px; min-width: 28px; text-align: center;
+  color: var(--amarelo);
+}
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--cinza-escuro);
+  border: 1px solid var(--verde); color: var(--verde);
+  font-family: 'Bebas Neue', sans-serif; font-size: 15px; letter-spacing: 1px;
+  padding: 12px 28px; border-radius: 10px; z-index: 9999;
+  transition: transform 0.35s cubic-bezier(0.22,1,0.36,1); white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ─── INFO BOX ─── */
+.info-box {
+  background: rgba(77,166,255,0.08);
+  border: 1px solid var(--azul);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--azul);
+  margin-bottom: 12px;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  .hero { padding: 22px 20px; }
+  .hero h1 { font-size: 36px; }
+  .hero::before { display: none; }
+  .page-body { padding: 16px; }
+  .row-2col, .row-mapa { grid-template-columns: 1fr; }
+  .topbar { padding: 0 16px; }
+  .logo { font-size: 22px; margin-right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">🏍️ MOTOROTA</div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="mudarAba('restaurante', this)">🍽️ RESTAURANTE</button>
+    <button class="tab-btn"       onclick="mudarAba('motoboy', this)">🏍️ MOTOBOY</button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ABA RESTAURANTE                                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="page-restaurante" class="page active">
+
+  <div class="hero restaurante-hero">
+    <div class="hero-tag">🍽️ PAINEL DO RESTAURANTE</div>
+    <h1>Cardápio &<br>Pedidos</h1>
+    <p>Monte o cardápio, crie pedidos selecionando itens do menu, defina endereços, calcule o preço e publique para os motoboys.</p>
+  </div>
+
+  <div class="page-body">
+
+    <!-- ════════════════════════════════ -->
+    <!-- 1) MENU (cadastro de itens)     -->
+    <!-- ════════════════════════════════ -->
+    <div class="row row-2col">
+      <div class="card">
+        <div class="card-title">➕ Novo Item do Menu</div>
+        <div class="info-box">ℹ️ Esta seção cadastra itens no menu. Para criar pedidos, use a seção abaixo.</div>
+        <div class="input-group">
+          <label>Nome do item</label>
+          <input type="text" id="itemNome" placeholder="Ex: X-Burguer Duplo">
+        </div>
+        <div class="input-group">
+          <label>Emoji</label>
+          <input type="text" id="itemEmoji" placeholder="🍔" maxlength="4">
+        </div>
+        <div class="row-inputs">
+          <div class="input-group" style="margin:0;"><label>Peso (kg)</label><input type="number" id="itemPeso" placeholder="0.5" min="0.01" step="0.01"></div>
+          <div class="input-group" style="margin:0;"><label>Volume (L)</label><input type="number" id="itemVolume" placeholder="2.5" min="0.01" step="0.01"></div>
+        </div>
+        <div class="row-inputs" style="margin-top:10px;">
+          <div class="input-group" style="margin:0;"><label>Preço (R$)</label><input type="number" id="itemPreco" placeholder="28.00" min="0" step="0.01"></div>
+          <div class="input-group" style="margin:0;"><label>Lucro (R$)</label><input type="number" id="itemLucro" placeholder="12.00" min="0" step="0.01"></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:14px;" onclick="adicionarItem()">➕ ADICIONAR AO MENU</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🍔 Menu Cadastrado</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Item</th><th>Peso</th><th>Volume</th><th>Preço</th><th>Lucro</th><th></th></tr></thead>
+            <tbody id="tabelaItens"></tbody>
+          </table>
+          <div id="emptyCardapio" class="empty"><div class="empty-icon">🍽️</div>Nenhum item no menu.<br><span style="font-size:12px;">Adicione itens usando o formulário ao lado.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════ -->
+    <!-- 2) CRIAR PEDIDO                  -->
+    <!-- ════════════════════════════════ -->
+    <div class="card">
+      <div class="card-title">🛒 Criar Novo Pedido</div>
+      <div class="info-box">ℹ️ Selecione a quantidade de cada item do menu, defina os endereços e publique. Você pode publicar vários pedidos ao mesmo tempo.</div>
+
+      <!-- Endereços -->
+      <div class="row row-2col" style="margin-bottom:20px;">
+        <div>
+          <div class="input-group">
+            <label>🏪 Endereço do Restaurante (Origem)</label>
+            <input type="text" id="endOrigem" placeholder="Ex: Av. Paulista, 1000 — SP">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="buscarEndereco('origem')">📍 DEFINIR ORIGEM</button>
+          <div id="statusOrigem" style="font-size:12px;color:var(--texto-muted);margin-top:8px;min-height:18px;"></div>
+        </div>
+
+        <div>
+          <div class="input-group">
+            <label>📦 Endereço do Cliente (Destino)</label>
+            <input type="text" id="endDestino" placeholder="Ex: Rua das Flores, 200 — SP">
+          </div>
+          <button class="btn btn-laranja btn-sm" onclick="buscarEndereco('destino')">📍 DEFINIR DESTINO</button>
+          <div id="statusDestino" style="font-size:12px;color:var(--texto-muted);margin-top:8px;min-height:18px;"></div>
+        </div>
+      </div>
+
+      <!-- Seleção de itens do menu -->
+      <div class="itens-title">📋 Selecione os itens do menu para o pedido</div>
+      <div id="pedidoSelector">
+        <div class="empty" style="padding:20px;"><div style="font-size:13px;">Cadastre itens no menu primeiro.</div></div>
+      </div>
+
+      <!-- Resumo do pedido + ações -->
+      <div id="resumoPedido" style="margin-top:14px;"></div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+        <button class="btn btn-azul" style="max-width:240px;" onclick="calcularRota('rest')">🗺️ CALCULAR ROTA</button>
+        <button class="btn btn-laranja" style="max-width:280px;" onclick="publicarRota()">📢 PUBLICAR PEDIDO</button>
+        <button class="btn btn-secondary" style="max-width:200px;" onclick="limparPedidoAtual()">🗑️ LIMPAR FORMULÁRIO</button>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════ -->
+    <!-- 3) MAPA RESTAURANTE              -->
+    <!-- ════════════════════════════════ -->
+    <div class="row row-mapa">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--texto-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Distância</div>
+          <div id="distanciaRest" class="dist-info">— km</div>
+        </div>
+
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--texto-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏱️ Tempo Estimado</div>
+          <div id="tempoRest" class="tempo-info">— min</div>
+        </div>
+
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--texto-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">💰 Preço da Entrega</div>
+          <div id="precoRest" class="preco-info">R$ —</div>
+          <div style="font-size:10px;color:var(--texto-muted);margin-top:4px;">Taxa base R$ 5 + R$ 2/km</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📌 Pontos Marcados</div>
+          <div id="pontosMapa-rest" style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:12px;color:var(--texto-muted);">Nenhum ponto definido.</div>
+          </div>
+        </div>
+
+        <button class="btn btn-secondary" onclick="limparMapa('rest')">🗑️ LIMPAR MAPA</button>
+
+      </div>
+      <div id="map-rest" class="mapa-container"></div>
+    </div>
+
+    <div id="resultadoRest" class="resultado"></div>
+
+    <!-- ════════════════════════════════ -->
+    <!-- 4) PEDIDOS PUBLICADOS            -->
+    <!-- ════════════════════════════════ -->
+    <div class="card">
+      <div class="card-title">🛵 Meus Pedidos Publicados</div>
+      <div id="pedidosPublicados">
+        <div class="empty"><div class="empty-icon">📭</div>Nenhum pedido publicado ainda.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ABA MOTOBOY                                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="page-motoboy" class="page">
+
+  <div class="hero motoboy-hero">
+    <div class="hero-tag">🏍️ PAINEL DO MOTOBOY</div>
+    <h1>Rotas<br>Disponíveis</h1>
+    <p>Veja todas as rotas publicadas, aceite uma ou mais e confirme a entrega quando finalizar.</p>
+  </div>
+
+  <div class="page-body">
+
+    <!-- Lista de rotas -->
+    <div class="card">
+      <div class="card-title">📋 Rotas Disponíveis</div>
+      <div class="info-box">📦 Capacidade da bag: <strong>84.7 L</strong> · 🏍️ Máx <strong>3 pedidos</strong> simultâneos · 🛣️ Rota total até <strong>20 km</strong></div>
+      <div id="rotasDisponiveis">
+        <div class="empty"><div class="empty-icon">🏪</div>Nenhuma rota publicada ainda.<br><span style="font-size:12px;color:var(--texto-muted);">Aguardando restaurantes.</span></div>
+      </div>
+    </div>
+
+    <!-- Mapa motoboy -->
+    <div class="row row-mapa">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--texto-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Distância</div>
+          <div id="distanciaMoto" class="dist-info">— km</div>
+        </div>
+
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--texto-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">⏱️ Tempo Estimado</div>
+          <div id="tempoMoto" class="tempo-info">— min</div>
+        </div>
+
+        <div class="card" style="padding:18px 20px;">
+          <div style="font-size:11px;color:var(--texto-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">💰 Valor da Entrega</div>
+          <div id="precoMoto" class="preco-info">R$ —</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📌 Pontos da Rota Selecionada</div>
+          <div id="pontosMapa-moto" style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:12px;color:var(--texto-muted);">Aceite uma rota para ver os pontos.</div>
+          </div>
+        </div>
+
+        <button class="btn btn-secondary" onclick="limparMapa('moto')">🗑️ LIMPAR MAPA</button>
+
+      </div>
+      <div id="map-moto" class="mapa-container"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONSTANTES
+// ═══════════════════════════════════════════════════════════
+const VOLUME_MAX_BAG     = 84.7;   // litros, fixo
+const VELOCIDADE_MOTO    = 35;     // km/h (média urbana com semáforos/trânsito)
+const TAXA_BASE_ENTREGA  = 5.00;   // R$ taxa fixa
+const TAXA_POR_KM        = 2.00;   // R$ por km
+const MAX_PEDIDOS_MOTOBOY = 3;     // máximo de pedidos aceitos simultaneamente
+const MAX_KM_ROTA_TOTAL   = 20;    // máximo de km da rota combinada do motoboy
+
+// ═══════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════════
+let cardapio       = [];   // itens do menu cadastrados
+let pedidoAtual    = {};   // { itemId: quantidade } - o pedido em construção
+let origem         = null; // { lat, lng, nome }
+let destino        = null; // { lat, lng, nome }
+let distAtualKm    = null; // número de km do pedido em construção
+let pedidos        = [];   // lista de pedidos publicados
+let pedidoSelecionadoId = null; // qual pedido o motoboy está vendo no mapa
+let rotaCombinadaCache = null; // { ids, ordem, distKm, tempoMin, coords, paradas }
+
+// ─── Mapas ───
+const mapRest = L.map('map-rest').setView([-23.55, -46.63], 12);
+const mapMoto = L.map('map-moto').setView([-23.55, -46.63], 12);
+
+[mapRest, mapMoto].forEach(m => {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(m);
+});
+
+const mkIcon = emoji => L.divIcon({
+  html: `<div style="font-size:26px;line-height:1;">${emoji}</div>`,
+  iconSize:[30,30], iconAnchor:[15,28], className:''
+});
+
+// Layers por mapa { origem, destino, rota }
+const lyr = {
+  rest: { origem:null, destino:null, rota:null },
+  moto: { origem:null, destino:null, rota:null }
+};
+
+mapRest.on('click', () => mostrarToast('Use os campos de texto acima para definir os endereços', 'info'));
+
+// ═══════════════════════════════════════════════════════════
+// ABAS
+// ═══════════════════════════════════════════════════════════
+function mudarAba(aba, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + aba).classList.add('active');
+  btn.classList.add('active');
+  setTimeout(() => { mapRest.invalidateSize(); mapMoto.invalidateSize(); }, 80);
+  if (aba === 'motoboy') renderizarRotasMotoboy();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CÁLCULOS DE ENTREGA
+// ═══════════════════════════════════════════════════════════
+function calcularPrecoEntrega(km) {
+  return TAXA_BASE_ENTREGA + (km * TAXA_POR_KM);
+}
+
+function calcularTempoMinutos(km) {
+  return Math.round((km / VELOCIDADE_MOTO) * 60);
+}
+
+function atualizarInfoEntrega(modo, km) {
+  const idDist  = modo === 'rest' ? 'distanciaRest' : 'distanciaMoto';
+  const idTempo = modo === 'rest' ? 'tempoRest'     : 'tempoMoto';
+  const idPreco = modo === 'rest' ? 'precoRest'     : 'precoMoto';
+
+  if (km == null || isNaN(km)) {
+    document.getElementById(idDist).textContent  = '— km';
+    document.getElementById(idTempo).textContent = '— min';
+    document.getElementById(idPreco).textContent = 'R$ —';
+    return;
+  }
+  const preco = calcularPrecoEntrega(km);
+  const tempo = calcularTempoMinutos(km);
+  document.getElementById(idDist).textContent  = `${km.toFixed(2)} km`;
+  document.getElementById(idTempo).textContent = `${tempo} min`;
+  document.getElementById(idPreco).textContent = `R$ ${preco.toFixed(2)}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// BUSCAR ENDEREÇO
+// ═══════════════════════════════════════════════════════════
+async function buscarEndereco(tipo) {
+  const inputId  = tipo === 'origem' ? 'endOrigem' : 'endDestino';
+  const statusId = tipo === 'origem' ? 'statusOrigem' : 'statusDestino';
+  const val      = document.getElementById(inputId).value.trim();
+  const statusEl = document.getElementById(statusId);
+
+  if (!val) { mostrarToast('Digite um endereço ou CEP', 'erro'); return; }
+  statusEl.textContent = '⏳ Buscando...';
+
+  try {
+    let endereco = val;
+    const cep = val.replace(/\D/g, '');
+    if (cep.length === 8) {
+      const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const d = await r.json();
+      if (d.erro) { statusEl.textContent = '❌ CEP não encontrado'; return; }
+      endereco = `${d.logradouro}, ${d.localidade}, ${d.uf}, Brasil`;
+    } else {
+      endereco += ', Brasil';
+    }
+
+    const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}`);
+    const d2 = await r2.json();
+    if (!d2.length) { statusEl.textContent = '❌ Endereço não encontrado'; return; }
+
+    const lat  = parseFloat(d2[0].lat);
+    const lng  = parseFloat(d2[0].lon);
+
+    if (tipo === 'origem') {
+      origem = { lat, lng, nome: val };
+      if (lyr.rest.origem) mapRest.removeLayer(lyr.rest.origem);
+      lyr.rest.origem = L.marker([lat,lng], { icon: mkIcon('🍽️') })
+        .bindPopup(`🍽️ Restaurante: ${val}`).addTo(mapRest);
+      mapRest.setView([lat,lng], 14);
+      statusEl.textContent = '✅ Origem definida!';
+      mostrarToast('Origem definida!');
+    } else {
+      destino = { lat, lng, nome: val };
+      if (lyr.rest.destino) mapRest.removeLayer(lyr.rest.destino);
+      lyr.rest.destino = L.marker([lat,lng], { icon: mkIcon('📍') })
+        .bindPopup(`📍 Cliente: ${val}`).addTo(mapRest);
+      mapRest.setView([lat,lng], 14);
+      statusEl.textContent = '✅ Destino definido!';
+      mostrarToast('Destino definido!');
+    }
+
+    atualizarPontos('rest');
+
+    if (origem && destino) {
+      mapRest.fitBounds([[origem.lat,origem.lng],[destino.lat,destino.lng]], { padding:[40,40] });
+    }
+  } catch {
+    statusEl.textContent = '❌ Erro ao buscar';
+    mostrarToast('Erro ao buscar endereço', 'erro');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALCULAR ROTA
+// ═══════════════════════════════════════════════════════════
+async function calcularRota(modo) {
+  let o, d;
+  if (modo === 'rest') {
+    o = origem; d = destino;
+  } else {
+    const pedido = pedidos.find(p => p.id === pedidoSelecionadoId);
+    if (!pedido) { mostrarToast('Selecione um pedido aceito primeiro', 'erro'); return; }
+    o = pedido.origem; d = pedido.destino;
+  }
+
+  if (!o || !d) { mostrarToast('Defina origem e destino primeiro!', 'erro'); return; }
+
+  try {
+    const url  = `https://router.project-osrm.org/route/v1/driving/${o.lng},${o.lat};${d.lng},${d.lat}?overview=full&geometries=geojson`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!data.routes?.length) { mostrarToast('Rota não encontrada', 'erro'); return; }
+
+    const coords = data.routes[0].geometry.coordinates.map(c => [c[1],c[0]]);
+    const distKm = data.routes[0].distance / 1000;
+    const mapAlvo = modo === 'rest' ? mapRest : mapMoto;
+
+    if (lyr[modo].rota) mapAlvo.removeLayer(lyr[modo].rota);
+    lyr[modo].rota = L.polyline(coords, { color:'#ff6b00', weight:4, opacity:0.85 }).addTo(mapAlvo);
+    mapAlvo.fitBounds(lyr[modo].rota.getBounds(), { padding:[28,28] });
+
+    if (modo === 'rest') distAtualKm = distKm;
+
+    atualizarInfoEntrega(modo, distKm);
+    mostrarToast(`Rota: ${distKm.toFixed(2)} km · ${calcularTempoMinutos(distKm)} min · R$ ${calcularPrecoEntrega(distKm).toFixed(2)}`);
+  } catch {
+    mostrarToast('Erro ao calcular rota', 'erro');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PONTOS DO MAPA
+// ═══════════════════════════════════════════════════════════
+function atualizarPontos(modo) {
+  const el = document.getElementById(`pontosMapa-${modo}`);
+  let o, d;
+  if (modo === 'rest') { o = origem; d = destino; }
+  else {
+    const pedido = pedidos.find(p => p.id === pedidoSelecionadoId);
+    o = pedido?.origem; d = pedido?.destino;
+  }
+
+  const pts = [];
+  if (o) pts.push({ label:'R', cor:'ponto-R', emoji:'🍽️', nome: o.nome });
+  if (d) pts.push({ label:'D', cor:'ponto-D', emoji:'📍', nome: d.nome });
+
+  if (!pts.length) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--texto-muted);">${modo === 'rest' ? 'Nenhum ponto definido.' : 'Aceite uma rota para ver os pontos.'}</div>`;
+    return;
+  }
+  el.innerHTML = pts.map(p => `
+    <div class="ponto-item">
+      <div class="ponto-num ${p.cor}">${p.label}</div>
+      <span>${p.emoji} ${p.nome}</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// LIMPAR MAPA
+// ═══════════════════════════════════════════════════════════
+function limparMapa(modo) {
+  const mapAlvo = modo === 'rest' ? mapRest : mapMoto;
+  ['origem','destino','rota'].forEach(k => {
+    if (lyr[modo][k]) { mapAlvo.removeLayer(lyr[modo][k]); lyr[modo][k] = null; }
+  });
+  if (modo === 'moto' && lyr.moto.paradas) {
+    lyr.moto.paradas.forEach(m => mapMoto.removeLayer(m));
+    lyr.moto.paradas = [];
+  }
+
+  if (modo === 'rest') {
+    origem = destino = null;
+    distAtualKm = null;
+    document.getElementById('statusOrigem').textContent = '';
+    document.getElementById('statusDestino').textContent = '';
+    document.getElementById('endOrigem').value = '';
+    document.getElementById('endDestino').value = '';
+  } else {
+    pedidoSelecionadoId = null;
+    rotaCombinadaCache = null;
+  }
+  atualizarInfoEntrega(modo, null);
+  if (modo === 'moto') atualizarParadasMotoboy();
+  else atualizarPontos(modo);
+  mostrarToast('Mapa limpo!');
+}
+
+// ═══════════════════════════════════════════════════════════
+// MENU (cadastro de itens) - SÓ ADICIONA AO MENU
+// ═══════════════════════════════════════════════════════════
+function adicionarItem() {
+  const nome   = document.getElementById('itemNome').value.trim();
+  const emoji  = document.getElementById('itemEmoji').value.trim() || '🍽️';
+  const peso   = parseFloat(document.getElementById('itemPeso').value);
+  const volume = parseFloat(document.getElementById('itemVolume').value);
+  const preco  = parseFloat(document.getElementById('itemPreco').value);
+  const lucro  = parseFloat(document.getElementById('itemLucro').value);
+
+  if (!nome || isNaN(peso) || isNaN(volume) || isNaN(preco) || isNaN(lucro)) {
+    mostrarToast('Preencha todos os campos!', 'erro'); return;
+  }
+  const id = Date.now();
+  cardapio.push({ nome, emoji, peso, volume, preco, lucro, id });
+  ['itemNome','itemEmoji','itemPeso','itemVolume','itemPreco','itemLucro'].forEach(idCampo => document.getElementById(idCampo).value = '');
+  renderizarCardapio();
+  renderizarPedidoSelector();
+  mostrarToast('Item adicionado ao menu!');
+}
+
+function removerItem(id) {
+  cardapio = cardapio.filter(i => i.id !== id);
+  delete pedidoAtual[id];
+  renderizarCardapio();
+  renderizarPedidoSelector();
+  atualizarResumoPedido();
+}
+
+function renderizarCardapio() {
+  const tbody = document.getElementById('tabelaItens');
+  const empty = document.getElementById('emptyCardapio');
+  if (!cardapio.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = cardapio.map(it => `
+    <tr>
+      <td><div class="nome-cell"><span style="font-size:18px">${it.emoji}</span>${it.nome}</div></td>
+      <td><span class="badge">${it.peso} kg</span></td>
+      <td><span class="badge">${it.volume} L</span></td>
+      <td>R$ ${it.preco.toFixed(2)}</td>
+      <td class="lucro-val">R$ ${it.lucro.toFixed(2)}</td>
+      <td><button class="btn btn-secondary btn-sm" style="color:var(--vermelho);padding:5px 10px;font-size:11px;" onclick="removerItem(${it.id})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// SELETOR DE ITENS PARA O PEDIDO
+// ═══════════════════════════════════════════════════════════
+function renderizarPedidoSelector() {
+  const el = document.getElementById('pedidoSelector');
+  if (!cardapio.length) {
+    el.innerHTML = '<div class="empty" style="padding:20px;"><div style="font-size:13px;">Cadastre itens no menu primeiro.</div></div>';
+    return;
+  }
+  el.innerHTML = cardapio.map(it => {
+    const qtd = pedidoAtual[it.id] || 0;
+    return `
+      <div class="pedido-item-selector">
+        <div class="pedido-item-selector-left">
+          <span style="font-size:20px">${it.emoji}</span>
+          <div>
+            <div>${it.nome}</div>
+            <div style="font-size:11px;color:var(--texto-muted);">⚖️ ${it.peso} kg · 📦 ${it.volume} L · R$ ${it.preco.toFixed(2)}</div>
+          </div>
+        </div>
+        <div class="qtd-controls">
+          <button class="qtd-btn" onclick="ajustarQtd(${it.id}, -1)">−</button>
+          <span class="qtd-display">${qtd}</span>
+          <button class="qtd-btn" onclick="ajustarQtd(${it.id}, 1)">+</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function ajustarQtd(itemId, delta) {
+  const atual = pedidoAtual[itemId] || 0;
+  const nova  = Math.max(0, atual + delta);
+
+  // verificar se cabe na bag (84.7L)
+  if (delta > 0) {
+    const item = cardapio.find(i => i.id === itemId);
+    const volumeTotal = calcularVolumePedido() + item.volume;
+    if (volumeTotal > VOLUME_MAX_BAG) {
+      mostrarToast(`Excede a bag (${VOLUME_MAX_BAG} L)`, 'erro');
+      return;
+    }
+  }
+
+  if (nova === 0) delete pedidoAtual[itemId];
+  else pedidoAtual[itemId] = nova;
+
+  renderizarPedidoSelector();
+  atualizarResumoPedido();
+}
+
+function calcularVolumePedido() {
+  return Object.entries(pedidoAtual).reduce((sum, [id, qtd]) => {
+    const it = cardapio.find(i => i.id === Number(id));
+    return sum + (it ? it.volume * qtd : 0);
+  }, 0);
+}
+
+function calcularPesoPedido() {
+  return Object.entries(pedidoAtual).reduce((sum, [id, qtd]) => {
+    const it = cardapio.find(i => i.id === Number(id));
+    return sum + (it ? it.peso * qtd : 0);
+  }, 0);
+}
+
+function calcularLucroPedido() {
+  return Object.entries(pedidoAtual).reduce((sum, [id, qtd]) => {
+    const it = cardapio.find(i => i.id === Number(id));
+    return sum + (it ? it.lucro * qtd : 0);
+  }, 0);
+}
+
+function calcularVendaPedido() {
+  return Object.entries(pedidoAtual).reduce((sum, [id, qtd]) => {
+    const it = cardapio.find(i => i.id === Number(id));
+    return sum + (it ? it.preco * qtd : 0);
+  }, 0);
+}
+
+function totalItensPedido() {
+  return Object.values(pedidoAtual).reduce((a,b) => a+b, 0);
+}
+
+function atualizarResumoPedido() {
+  const el = document.getElementById('resumoPedido');
+  const total = totalItensPedido();
+  if (!total) { el.innerHTML = ''; return; }
+
+  const peso   = calcularPesoPedido();
+  const vol    = calcularVolumePedido();
+  const venda  = calcularVendaPedido();
+  const lucro  = calcularLucroPedido();
+  const pctVol = (vol / VOLUME_MAX_BAG * 100).toFixed(1);
+
+  el.innerHTML = `
+    <div class="resultado" style="display:block;margin-top:14px;">
+      <div class="resultado-header"><span style="font-size:22px">🛒</span><h2 style="font-size:20px;">Resumo do Pedido</h2></div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-label">Itens</div><div class="stat-value">${total}</div></div>
+        <div class="stat-box"><div class="stat-label">Total Venda</div><div class="stat-value">R$ ${venda.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">Lucro</div><div class="stat-value" style="color:var(--verde);">R$ ${lucro.toFixed(2)}</div></div>
+        <div class="stat-box"><div class="stat-label">Peso</div><div class="stat-value">${peso.toFixed(2)}<span style="font-size:12px"> kg</span></div></div>
+        <div class="stat-box"><div class="stat-label">Volume</div><div class="stat-value">${vol.toFixed(2)}<span style="font-size:12px"> L</span></div><div class="stat-sub">${pctVol}% de ${VOLUME_MAX_BAG} L</div></div>
+      </div>
+      <div class="progress-label"><span>📦 Volume da Bag</span><span>${vol.toFixed(2)} / ${VOLUME_MAX_BAG} L</span></div>
+      <div class="progress-bar"><div class="progress-fill fill-vol" style="width:${Math.min(100,pctVol)}%"></div></div>
+    </div>
+  `;
+}
+
+function limparPedidoAtual() {
+  pedidoAtual = {};
+  origem = destino = null;
+  distAtualKm = null;
+  document.getElementById('endOrigem').value = '';
+  document.getElementById('endDestino').value = '';
+  document.getElementById('statusOrigem').textContent = '';
+  document.getElementById('statusDestino').textContent = '';
+  ['origem','destino','rota'].forEach(k => {
+    if (lyr.rest[k]) { mapRest.removeLayer(lyr.rest[k]); lyr.rest[k] = null; }
+  });
+  atualizarInfoEntrega('rest', null);
+  atualizarPontos('rest');
+  renderizarPedidoSelector();
+  atualizarResumoPedido();
+  mostrarToast('Formulário limpo');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PUBLICAR PEDIDO (suporta múltiplos pedidos simultâneos)
+// ═══════════════════════════════════════════════════════════
+function publicarRota() {
+  if (!origem || !destino) { mostrarToast('Defina origem e destino!', 'erro'); return; }
+  if (!totalItensPedido())  { mostrarToast('Selecione itens para o pedido!', 'erro'); return; }
+  if (distAtualKm == null)  { mostrarToast('Calcule a rota antes de publicar!', 'erro'); return; }
+
+  const vol = calcularVolumePedido();
+  if (vol > VOLUME_MAX_BAG) { mostrarToast(`Volume excede a bag (${VOLUME_MAX_BAG} L)`, 'erro'); return; }
+
+  // Construir lista de itens agrupados
+  const itens = Object.entries(pedidoAtual).map(([id, qtd]) => {
+    const it = cardapio.find(i => i.id === Number(id));
+    return { ...it, qtd };
+  });
+
+  const novoPedido = {
+    id: Date.now(),
+    origem:  { ...origem },
+    destino: { ...destino },
+    itens,
+    distKm:  distAtualKm,
+    tempoMin: calcularTempoMinutos(distAtualKm),
+    precoEntrega: calcularPrecoEntrega(distAtualKm),
+    pesoTotal:   calcularPesoPedido(),
+    volumeTotal: calcularVolumePedido(),
+    vendaTotal:  calcularVendaPedido(),
+    lucroTotal:  calcularLucroPedido(),
+    status: 'aguardando',  // aguardando | aceito | entregue | cancelado
+    criadoEm: new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' })
+  };
+
+  pedidos.push(novoPedido);
+
+  // Limpa o formulário para permitir criar outro pedido
+  limparPedidoAtual();
+
+  renderizarPedidosPublicados();
+  renderizarRotasMotoboy();
+  mostrarToast(`Pedido #${novoPedido.id.toString().slice(-4)} publicado!`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDERIZAR PEDIDOS PUBLICADOS (PAINEL RESTAURANTE)
+// ═══════════════════════════════════════════════════════════
+function renderizarPedidosPublicados() {
+  const el = document.getElementById('pedidosPublicados');
+  const ativos = pedidos.filter(p => p.status !== 'cancelado');
+
+  if (!ativos.length && !pedidos.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>Nenhum pedido publicado ainda.</div>';
+    return;
+  }
+
+  el.innerHTML = pedidos.map(p => {
+    const statusInfo = {
+      aguardando: { cls: '', badge: 'status-aguardando', ico: '⏳', txt: 'Aguardando motoboy' },
+      aceito:     { cls: 'aceita', badge: 'status-aceita', ico: '🏍️', txt: 'Motoboy a caminho' },
+      entregue:   { cls: 'entregue', badge: 'status-entregue', ico: '📦', txt: 'Entregue!' },
+      cancelado:  { cls: 'cancelada', badge: 'status-cancelada', ico: '❌', txt: 'Cancelado' }
+    }[p.status];
+
+    const itensHTML = p.itens.map(it => `<span class="badge">${it.emoji} ${it.nome} ×${it.qtd}</span>`).join(' ');
+
+    const acoes = [];
+    if (p.status === 'aguardando' || p.status === 'aceito') {
+      acoes.push(`<button class="btn btn-danger btn-sm" onclick="cancelarPedido(${p.id})">❌ CANCELAR</button>`);
+    }
+
+    return `
+      <div class="rota-card ${statusInfo.cls}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-weight:700;margin-bottom:6px;">Pedido #${p.id.toString().slice(-4)} <span style="font-size:11px;color:var(--texto-muted);">· ${p.criadoEm}</span></div>
+            <div style="font-size:12px;color:var(--texto-muted);">🍽️ ${p.origem.nome}</div>
+            <div style="font-size:12px;color:var(--texto-muted);">📍 ${p.destino.nome}</div>
+            <div style="font-size:12px;color:var(--texto-muted);margin-top:4px;">🛣️ ${p.distKm.toFixed(2)} km · ⏱️ ${p.tempoMin} min · 💰 R$ ${p.precoEntrega.toFixed(2)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+            <span class="status-badge ${statusInfo.badge}">${statusInfo.ico} ${statusInfo.txt}</span>
+            ${acoes.join('')}
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--cinza-claro);padding-top:10px;">
+          <div style="font-size:11px;color:var(--texto-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Itens do pedido</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">${itensHTML}</div>
+          <div style="font-size:12px;color:var(--verde);font-weight:700;margin-top:8px;">💰 Lucro: R$ ${p.lucroTotal.toFixed(2)} · ⚖️ ${p.pesoTotal.toFixed(2)} kg · 📦 ${p.volumeTotal.toFixed(2)} L</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// CANCELAR PEDIDO (RESTAURANTE)
+// ═══════════════════════════════════════════════════════════
+async function cancelarPedido(id) {
+  const p = pedidos.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`Cancelar o pedido #${id.toString().slice(-4)}?`)) return;
+
+  const eraAceito = p.status === 'aceito';
+  p.status = 'cancelado';
+  p.canceladoEm = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+
+  // Se foi cancelado um pedido que o motoboy tinha aceitado, recalcular rota
+  if (eraAceito) {
+    const restantes = pedidos.filter(x => x.status === 'aceito');
+    if (restantes.length) {
+      try {
+        rotaCombinadaCache = await calcularRotaCombinada(restantes);
+        desenharRotaCombinadaNoMapa();
+      } catch {}
+    } else {
+      // sem nenhum aceito, limpa o mapa do motoboy
+      rotaCombinadaCache = null;
+      pedidoSelecionadoId = null;
+      ['origem','destino','rota'].forEach(k => {
+        if (lyr.moto[k]) { mapMoto.removeLayer(lyr.moto[k]); lyr.moto[k] = null; }
+      });
+      if (lyr.moto.paradas) { lyr.moto.paradas.forEach(m => mapMoto.removeLayer(m)); lyr.moto.paradas = []; }
+      atualizarInfoEntrega('moto', null);
+      atualizarParadasMotoboy();
+    }
+  }
+
+  renderizarPedidosPublicados();
+  renderizarRotasMotoboy();
+  mostrarToast('Pedido cancelado', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAINEL MOTOBOY — listar rotas disponíveis
+// ═══════════════════════════════════════════════════════════
+function renderizarRotasMotoboy() {
+  const el = document.getElementById('rotasDisponiveis');
+  mapMoto.invalidateSize();
+
+  if (!pedidos.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🏪</div>Nenhuma rota publicada ainda.</div>';
+    return;
+  }
+
+  const aceitos     = pedidos.filter(p => p.status === 'aceito');
+  const noLimite    = aceitos.length >= MAX_PEDIDOS_MOTOBOY;
+  const distAtual   = rotaCombinadaCache ? rotaCombinadaCache.distKm : 0;
+  const tempoAtual  = rotaCombinadaCache ? rotaCombinadaCache.tempoMin : 0;
+
+  // Banner com info de status atual do motoboy
+  const banner = `
+    <div class="info-box" style="margin-bottom:14px;">
+      🏍️ Pedidos aceitos: <strong>${aceitos.length} / ${MAX_PEDIDOS_MOTOBOY}</strong>
+      ${aceitos.length ? ` · 🛣️ Rota combinada: <strong>${distAtual.toFixed(2)} km</strong> / ${MAX_KM_ROTA_TOTAL} km · ⏱️ <strong>${tempoAtual} min</strong>` : ''}
+    </div>
+  `;
+
+  const cardsHTML = pedidos.map(p => {
+    const statusInfo = {
+      aguardando: { cls: '', badge: 'status-aguardando', ico: '⏳', txt: 'Disponível' },
+      aceito:     { cls: 'aceita', badge: 'status-aceita', ico: '🏍️', txt: 'Aceita' },
+      entregue:   { cls: 'entregue', badge: 'status-entregue', ico: '✅', txt: 'Entregue' },
+      cancelado:  { cls: 'cancelada', badge: 'status-cancelada', ico: '❌', txt: 'Cancelado pelo restaurante' }
+    }[p.status];
+
+    const itensHTML = p.itens.map(it => `<span class="badge">${it.emoji} ${it.nome} ×${it.qtd}</span>`).join(' ');
+
+    const acoes = [];
+    if (p.status === 'aguardando') {
+      if (noLimite) {
+        acoes.push(`<button class="btn btn-secondary btn-sm" disabled style="opacity:0.4;cursor:not-allowed;">🚫 LIMITE ATINGIDO</button>`);
+      } else {
+        acoes.push(`<button class="btn btn-verde btn-sm" onclick="aceitarRota(${p.id})">✅ ACEITAR</button>`);
+      }
+    } else if (p.status === 'aceito') {
+      acoes.push(`<button class="btn btn-azul btn-sm" onclick="verRotaMapa(${p.id})">🗺️ VER NO MAPA</button>`);
+      acoes.push(`<button class="btn btn-verde btn-sm" onclick="confirmarEntrega(${p.id})">📦 CONFIRMAR ENTREGA</button>`);
+    }
+    // pedidos entregues e cancelados ficam visíveis mas sem ações principais
+
+    return `
+      <div class="rota-card ${statusInfo.cls}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--amarelo);margin-bottom:6px;">Pedido #${p.id.toString().slice(-4)}</div>
+            <div style="font-size:13px;margin-bottom:3px;"><strong>🍽️ Origem:</strong> ${p.origem.nome}</div>
+            <div style="font-size:13px;margin-bottom:3px;"><strong>📍 Destino:</strong> ${p.destino.nome}</div>
+            <div style="font-size:13px;margin-top:6px;">🛣️ <strong>${p.distKm.toFixed(2)} km</strong> · ⏱️ <strong>${p.tempoMin} min</strong></div>
+            <div style="font-size:14px;color:var(--verde);font-weight:700;margin-top:4px;">💰 Você recebe: R$ ${p.precoEntrega.toFixed(2)}</div>
+            <div style="font-size:12px;color:var(--texto-muted);margin-top:4px;">⚖️ ${p.pesoTotal.toFixed(2)} kg · 📦 ${p.volumeTotal.toFixed(2)} L</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+            <span class="status-badge ${statusInfo.badge}">${statusInfo.ico} ${statusInfo.txt}</span>
+            ${acoes.join('')}
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--cinza-claro);padding-top:10px;">
+          <div style="font-size:11px;color:var(--texto-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Itens</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">${itensHTML}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = banner + cardsHTML;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROTA MULTI-STOP (OSRM trip endpoint para TSP)
+// Recebe lista de pedidos aceitos, retorna rota otimizada:
+// origem do 1º restaurante → outras paradas na melhor ordem.
+// Como cada pedido tem origem (restaurante) e destino (cliente),
+// montamos um waypoint para cada um na sequência: pega-comida-1 →
+// entrega-1 → pega-comida-2 → entrega-2 ... mas usando o OSRM trip
+// para reordenar e achar o menor caminho.
+// ═══════════════════════════════════════════════════════════
+async function calcularRotaCombinada(pedidosAceitos) {
+  // Para cada pedido construímos 2 paradas: pickup (origem) e dropoff (destino)
+  // Restrição lógica: pickup do pedido X deve vir antes do dropoff X.
+  // Com até 3 pedidos = 6 paradas. Testamos todas as permutações válidas e
+  // pegamos a de menor distância via OSRM /route (uma chamada por permutação).
+  //
+  // 3 pedidos → 6!/2³ = 90 ordens válidas (precedência pickup<dropoff).
+  // 2 pedidos → 4!/2² = 6.  1 pedido → 1.
+  // Para limitar chamadas, com 3 pedidos usamos heurística simples:
+  // ir restaurante mais próximo primeiro, e depois entregar o cliente mais
+  // próximo, sempre respeitando que só posso entregar o que já peguei.
+
+  // Caso simples: 1 pedido só → rota direta
+  if (pedidosAceitos.length === 1) {
+    const p = pedidosAceitos[0];
+    const url = `https://router.project-osrm.org/route/v1/driving/${p.origem.lng},${p.origem.lat};${p.destino.lng},${p.destino.lat}?overview=full&geometries=geojson`;
+    const r = await fetch(url);
+    const d = await r.json();
+    if (!d.routes?.length) throw new Error('Rota não encontrada');
+    const distKm = d.routes[0].distance / 1000;
+    return {
+      ids: [p.id],
+      paradas: [
+        { tipo: 'pickup',  pedidoId: p.id, lat: p.origem.lat,  lng: p.origem.lng,  nome: p.origem.nome },
+        { tipo: 'dropoff', pedidoId: p.id, lat: p.destino.lat, lng: p.destino.lng, nome: p.destino.nome }
+      ],
+      coords: d.routes[0].geometry.coordinates.map(c => [c[1], c[0]]),
+      distKm,
+      tempoMin: calcularTempoMinutos(distKm)
+    };
+  }
+
+  // Múltiplos pedidos: heurística "vizinho mais próximo" respeitando precedência
+  // Começa pelo restaurante do primeiro aceito; a cada passo, escolhe a próxima
+  // parada como sendo: o pickup mais próximo (de pedido ainda não retirado) OU
+  // o dropoff mais próximo (de pedido já retirado), o que estiver mais perto.
+  const haversine = (a, b) => {
+    const R = 6371;
+    const toRad = x => x * Math.PI / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+    const h = Math.sin(dLat/2)**2 + Math.sin(dLng/2)**2 * Math.cos(lat1) * Math.cos(lat2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+
+  const pickups  = pedidosAceitos.map(p => ({ tipo:'pickup',  pedidoId:p.id, lat:p.origem.lat,  lng:p.origem.lng,  nome:p.origem.nome }));
+  const dropoffs = pedidosAceitos.map(p => ({ tipo:'dropoff', pedidoId:p.id, lat:p.destino.lat, lng:p.destino.lng, nome:p.destino.nome }));
+
+  // Para garantir menor distância total, testamos todas as ordens válidas com até 3 pedidos.
+  // Geramos permutações da sequência de pickups+dropoffs respeitando que
+  // pickup(X) sempre vem antes de dropoff(X).
+  const todos = [...pickups, ...dropoffs];
+  const pedidosIds = pedidosAceitos.map(p => p.id);
+
+  function* permutar(arr) {
+    if (arr.length <= 1) { yield arr; return; }
+    for (let i = 0; i < arr.length; i++) {
+      const resto = [...arr.slice(0,i), ...arr.slice(i+1)];
+      for (const sub of permutar(resto)) yield [arr[i], ...sub];
+    }
+  }
+
+  function ordemValida(seq) {
+    const retirados = new Set();
+    for (const stop of seq) {
+      if (stop.tipo === 'pickup') retirados.add(stop.pedidoId);
+      else if (!retirados.has(stop.pedidoId)) return false; // dropoff antes do pickup
+    }
+    return true;
+  }
+
+  // Encontrar a melhor ordem pela distância haversine (rápido, sem chamar OSRM N vezes)
+  let melhor = null;
+  for (const perm of permutar(todos)) {
+    if (!ordemValida(perm)) continue;
+    let total = 0;
+    for (let i = 1; i < perm.length; i++) total += haversine(perm[i-1], perm[i]);
+    if (!melhor || total < melhor.dist) melhor = { seq: perm, dist: total };
+  }
+
+  // Agora chamar OSRM uma única vez com a melhor ordem encontrada para obter rota real
+  const coords = melhor.seq.map(s => `${s.lng},${s.lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+  const r = await fetch(url);
+  const d = await r.json();
+  if (!d.routes?.length) throw new Error('Rota combinada não encontrada');
+  const distKm = d.routes[0].distance / 1000;
+
+  return {
+    ids: pedidosIds,
+    paradas: melhor.seq,
+    coords: d.routes[0].geometry.coordinates.map(c => [c[1], c[0]]),
+    distKm,
+    tempoMin: calcularTempoMinutos(distKm)
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACEITAR ROTA (motoboy) — valida 3 pedidos máx + 20 km total
+// ═══════════════════════════════════════════════════════════
+async function aceitarRota(id) {
+  const p = pedidos.find(x => x.id === id);
+  if (!p || p.status !== 'aguardando') return;
+
+  const aceitosAtuais = pedidos.filter(x => x.status === 'aceito');
+
+  // ─── Validação 1: limite de pedidos simultâneos ───
+  if (aceitosAtuais.length >= MAX_PEDIDOS_MOTOBOY) {
+    mostrarToast(`Limite de ${MAX_PEDIDOS_MOTOBOY} pedidos por motoboy atingido`, 'erro');
+    return;
+  }
+
+  // ─── Validação 2: simular se a rota combinada cabe nos 20 km ───
+  const simulacao = [...aceitosAtuais, p];
+  mostrarToast('Calculando rota...', 'info');
+  let rotaSim;
+  try {
+    rotaSim = await calcularRotaCombinada(simulacao);
+  } catch {
+    mostrarToast('Erro ao calcular rota combinada', 'erro');
+    return;
+  }
+
+  if (rotaSim.distKm > MAX_KM_ROTA_TOTAL) {
+    mostrarToast(`Rota combinada teria ${rotaSim.distKm.toFixed(2)} km (limite ${MAX_KM_ROTA_TOTAL} km)`, 'erro');
+    return;
+  }
+
+  // ─── Aceita e atualiza cache ───
+  p.status = 'aceito';
+  rotaCombinadaCache = rotaSim;
+  pedidoSelecionadoId = id;
+
+  renderizarPedidosPublicados();
+  renderizarRotasMotoboy();
+  desenharRotaCombinadaNoMapa();
+  mostrarToast(`Pedido #${id.toString().slice(-4)} aceito! Rota: ${rotaSim.distKm.toFixed(2)} km · ${rotaSim.tempoMin} min`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// VER ROTA NO MAPA (motoboy) — mostra a rota combinada
+// ═══════════════════════════════════════════════════════════
+async function verRotaMapa(id) {
+  pedidoSelecionadoId = id;
+  const aceitos = pedidos.filter(p => p.status === 'aceito');
+
+  // Se não há aceitos (clicou em um já entregue), mostra rota dele isolada
+  const lista = aceitos.length ? aceitos : pedidos.filter(p => p.id === id);
+  if (!lista.length) return;
+
+  try {
+    rotaCombinadaCache = await calcularRotaCombinada(lista);
+    desenharRotaCombinadaNoMapa();
+  } catch {
+    mostrarToast('Erro ao recalcular rota', 'erro');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DESENHAR ROTA COMBINADA NO MAPA (motoboy)
+// ═══════════════════════════════════════════════════════════
+function desenharRotaCombinadaNoMapa() {
+  // Limpar layers antigos
+  ['origem','destino','rota'].forEach(k => {
+    if (lyr.moto[k]) { mapMoto.removeLayer(lyr.moto[k]); lyr.moto[k] = null; }
+  });
+  if (lyr.moto.paradas) {
+    lyr.moto.paradas.forEach(m => mapMoto.removeLayer(m));
+  }
+  lyr.moto.paradas = [];
+
+  if (!rotaCombinadaCache) return;
+
+  // Desenhar marcadores para cada parada, numerados em sequência
+  rotaCombinadaCache.paradas.forEach((stop, idx) => {
+    const numero = idx + 1;
+    const emoji  = stop.tipo === 'pickup' ? '🍽️' : '📍';
+    const label  = stop.tipo === 'pickup' ? 'Retirar' : 'Entregar';
+    const html = `
+      <div style="position:relative;">
+        <div style="font-size:30px;line-height:1;">${emoji}</div>
+        <div style="position:absolute;top:-4px;right:-8px;background:#e8321a;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;">${numero}</div>
+      </div>`;
+    const icon = L.divIcon({ html, iconSize:[34,34], iconAnchor:[17,30], className:'' });
+    const m = L.marker([stop.lat, stop.lng], { icon })
+      .bindPopup(`<strong>${numero}. ${label}</strong><br>${stop.nome}<br><span style="color:#777;font-size:11px;">Pedido #${stop.pedidoId.toString().slice(-4)}</span>`)
+      .addTo(mapMoto);
+    lyr.moto.paradas.push(m);
+  });
+
+  // Desenhar polyline
+  lyr.moto.rota = L.polyline(rotaCombinadaCache.coords, { color:'#ff6b00', weight:4, opacity:0.85 }).addTo(mapMoto);
+  mapMoto.fitBounds(lyr.moto.rota.getBounds(), { padding:[40,40] });
+
+  // Atualizar infos
+  atualizarInfoEntrega('moto', rotaCombinadaCache.distKm);
+  atualizarParadasMotoboy();
+}
+
+// ═══════════════════════════════════════════════════════════
+// LISTA DE PARADAS (motoboy)
+// ═══════════════════════════════════════════════════════════
+function atualizarParadasMotoboy() {
+  const el = document.getElementById('pontosMapa-moto');
+  if (!rotaCombinadaCache) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--texto-muted);">Aceite uma rota para ver os pontos.</div>';
+    return;
+  }
+  el.innerHTML = rotaCombinadaCache.paradas.map((stop, idx) => {
+    const numero = idx + 1;
+    const cor = stop.tipo === 'pickup' ? 'ponto-R' : 'ponto-D';
+    const emoji = stop.tipo === 'pickup' ? '🍽️' : '📍';
+    const acao = stop.tipo === 'pickup' ? 'Retirar' : 'Entregar';
+    return `
+      <div class="ponto-item">
+        <div class="ponto-num ${cor}">${numero}</div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <span style="font-size:12px;"><strong>${acao}</strong> · #${stop.pedidoId.toString().slice(-4)}</span>
+          <span style="font-size:11px;color:var(--texto-muted);">${emoji} ${stop.nome}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONFIRMAR ENTREGA (motoboy)
+// ═══════════════════════════════════════════════════════════
+async function confirmarEntrega(id) {
+  const p = pedidos.find(x => x.id === id);
+  if (!p || p.status !== 'aceito') return;
+  if (!confirm(`Confirmar que o pedido #${id.toString().slice(-4)} foi entregue?`)) return;
+
+  p.status = 'entregue';
+  p.entregueEm = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+
+  // Recalcular rota combinada com os que ainda estão aceitos
+  const restantes = pedidos.filter(x => x.status === 'aceito');
+  if (restantes.length) {
+    try {
+      rotaCombinadaCache = await calcularRotaCombinada(restantes);
+      desenharRotaCombinadaNoMapa();
+    } catch {}
+  } else {
+    // sem nenhum aceito, limpa o mapa
+    rotaCombinadaCache = null;
+    pedidoSelecionadoId = null;
+    ['origem','destino','rota'].forEach(k => {
+      if (lyr.moto[k]) { mapMoto.removeLayer(lyr.moto[k]); lyr.moto[k] = null; }
+    });
+    if (lyr.moto.paradas) { lyr.moto.paradas.forEach(m => mapMoto.removeLayer(m)); lyr.moto.paradas = []; }
+    atualizarInfoEntrega('moto', null);
+    atualizarParadasMotoboy();
+  }
+
+  renderizarPedidosPublicados();
+  renderizarRotasMotoboy();
+  mostrarToast(`Entrega confirmada! +R$ ${p.precoEntrega.toFixed(2)}`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+let toastTimer = null;
+function mostrarToast(msg, tipo='ok') {
+  const t   = document.getElementById('toast');
+  const cor = tipo==='erro' ? 'var(--vermelho)' : tipo==='info' ? 'var(--azul)' : 'var(--verde)';
+  const ico = tipo==='erro' ? '⚠️' : tipo==='info' ? 'ℹ️' : '✅';
+  t.textContent = `${ico} ${msg}`;
+  t.style.borderColor = cor;
+  t.style.color = cor;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── Init ───
+renderizarCardapio();
+renderizarPedidoSelector();
+</script>
+</body>
+</html>
