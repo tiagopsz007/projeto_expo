@@ -325,8 +325,92 @@ tbody tr:hover { background: var(--cinza-medio); }
   color: var(--amarelo);
 }
 
-/* ─── TOAST ─── */
-.toast {
+/* ─── API KEY BAR ─── */
+.apikey-bar {
+  background: #1a1200;
+  border-bottom: 2px solid var(--amarelo);
+  padding: 10px 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.apikey-bar label {
+  font-size: 11px; color: var(--amarelo); text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 0; white-space: nowrap;
+}
+.apikey-bar input {
+  flex: 1; min-width: 260px; max-width: 480px;
+  background: #0d0d0d; border: 1px solid var(--amarelo);
+  font-size: 13px; padding: 8px 12px; border-radius: 7px;
+  font-family: monospace; color: var(--amarelo);
+}
+.apikey-bar input:focus { border-color: #fff; color: #fff; }
+.apikey-bar .btn-sm { width: auto; font-size: 13px; padding: 8px 16px; }
+.apikey-status {
+  font-size: 12px; color: var(--texto-muted);
+}
+
+/* ─── INSTRUÇÕES PASSO A PASSO ─── */
+.instrucoes-card {
+  background: var(--cinza-escuro);
+  border: 1px solid var(--cinza-claro);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.instrucoes-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--cinza-claro);
+}
+.instrucoes-header:hover { background: rgba(255,255,255,0.03); }
+.instrucoes-toggle-icon {
+  font-size: 18px; transition: transform 0.25s; color: var(--amarelo);
+}
+.instrucoes-toggle-icon.fechado { transform: rotate(-90deg); }
+.instrucoes-body {
+  max-height: 600px;
+  overflow-y: auto;
+  transition: max-height 0.35s cubic-bezier(0.22,1,0.36,1),
+              opacity 0.25s ease;
+  opacity: 1;
+}
+.instrucoes-body.fechado {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+.instrucao-step {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.instrucao-step:last-child { border-bottom: none; }
+.step-num {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px;
+  background: var(--cinza-claro); color: var(--texto-muted);
+  margin-top: 1px;
+}
+.step-num.pickup  { background: rgba(232,50,26,0.25); color: var(--vermelho); border: 1px solid var(--vermelho); }
+.step-num.dropoff { background: rgba(61,220,132,0.2); color: var(--verde); border: 1px solid var(--verde); }
+.step-icon-turn { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+.step-text { flex: 1; }
+.step-street { font-size: 13px; font-weight: 600; color: var(--texto); }
+.step-detail { font-size: 11px; color: var(--texto-muted); margin-top: 2px; }
+.step-dist { font-size: 11px; color: var(--azul); margin-top: 2px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; }
+.step-parada-label {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1px;
+  padding: 8px 20px;
+  background: var(--cinza-medio);
+  color: var(--amarelo);
+  border-bottom: 1px solid var(--cinza-claro);
+  display: flex; align-items: center; gap: 8px;
+
   position: fixed; bottom: 28px; left: 50%;
   transform: translateX(-50%) translateY(80px);
   background: var(--cinza-escuro);
@@ -371,6 +455,14 @@ tbody tr:hover { background: var(--cinza-medio); }
   </div>
 </div>
 
+<!-- BARRA DE API KEY 
+<div class="apikey-bar">
+  <label>🔑 GraphHopper API Key</label>
+  <input type="text" id="ghApiKey" placeholder="Cole sua key aqui — graphhopper.com/dashboard → API Keys" oninput="salvarApiKey()">
+  <button class="btn btn-laranja btn-sm" onclick="testarApiKey()">✅ TESTAR</button>
+  <span class="apikey-status" id="ghKeyStatus">⚠️ Sem key: mapas e rotas ficam cinzas. Crie grátis em <strong>graphhopper.com</strong> → Dashboard → API Keys.</span>
+</div>
+-->
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- ABA RESTAURANTE                                        -->
@@ -514,6 +606,35 @@ tbody tr:hover { background: var(--cinza-medio); }
       </div>
     </div>
 
+    <!-- ════════════════════════════════ -->
+    <!-- 5) DASHBOARD DO DIA              -->
+    <!-- ════════════════════════════════ -->
+    <div class="card">
+      <div class="card-title">📊 Resultados do Dia — Restaurante</div>
+      <div class="stats-grid" id="dashRest">
+        <div class="stat-box">
+          <div class="stat-label">💰 Lucro Total</div>
+          <div class="stat-value" id="drLucro">R$ 0,00</div>
+          <div class="stat-sub">Lucro bruto das vendas</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">🛒 Total em Vendas</div>
+          <div class="stat-value" id="drVendas">R$ 0,00</div>
+          <div class="stat-sub">Receita total</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">📦 Pedidos Entregues</div>
+          <div class="stat-value" id="drPedidos">0</div>
+          <div class="stat-sub">Concluídos hoje</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">💸 Custo Entregas</div>
+          <div class="stat-value" id="drCustoEntregas">R$ 0,00</div>
+          <div class="stat-sub">Valor pago em fretes</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -572,6 +693,52 @@ tbody tr:hover { background: var(--cinza-medio); }
       <div id="map-moto" class="mapa-container"></div>
     </div>
 
+    <!-- ════════════════════════════════ -->
+    <!-- INSTRUÇÕES PASSO A PASSO         -->
+    <!-- ════════════════════════════════ -->
+    <div class="instrucoes-card" id="instrucoes-card">
+      <div class="instrucoes-header" onclick="toggleInstrucoes()">
+        <div class="card-title" style="margin:0;">🧭 Navegação Passo a Passo</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:12px;color:var(--texto-muted);" id="instrucoes-resumo">Aceite uma rota para ver as instruções</span>
+          <span class="instrucoes-toggle-icon" id="instrucoes-icon">▼</span>
+        </div>
+      </div>
+      <div class="instrucoes-body" id="instrucoes-body">
+        <div class="empty" style="padding:28px;"><div class="empty-icon">🗺️</div>Aceite e visualize uma rota para ver as instruções de navegação aqui.</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════ -->
+    <!-- DASHBOARD DO DIA — MOTOBOY       -->
+    <!-- ════════════════════════════════ -->
+    <div class="card">
+      <div class="card-title">📊 Resultados do Dia — Motoboy</div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-label">💰 Ganhos do Dia</div>
+          <div class="stat-value" id="dmGanhos">R$ 0,00</div>
+          <div class="stat-sub">Total recebido por entregas</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">🛣️ KM Percorridos</div>
+          <div class="stat-value" id="dmKm">0,0 km</div>
+          <div class="stat-sub">Distância total do dia</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">📦 Entregas Feitas</div>
+          <div class="stat-value" id="dmEntregas">0</div>
+          <div class="stat-sub">Pedidos entregues hoje</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">💵 Média por Entrega</div>
+          <div class="stat-value" id="dmMedia">R$ 0,00</div>
+          <div class="stat-sub">Ganho médio por corrida</div>
+        </div>
+      </div>
+      <div id="dmHistorico" style="margin-top:14px;"></div>
+    </div>
+
   </div>
 </div>
 
@@ -602,13 +769,39 @@ let pedidos        = [];   // lista de pedidos publicados
 let pedidoSelecionadoId = null; // qual pedido o motoboy está vendo no mapa
 let rotaCombinadaCache = null; // { ids, ordem, distKm, tempoMin, coords, paradas }
 
+// ─── Métricas do dia ───
+let metricas = {
+  motoboy: { ganhos: 0, kmPercorridos: 0, entregasFeitas: 0 },
+  rest:    { lucroTotal: 0, vendasTotal: 0, pedidosEntregues: 0 }
+};
+
 // ─── Mapas ───
 const mapRest = L.map('map-rest').setView([-23.55, -46.63], 12);
 const mapMoto = L.map('map-moto').setView([-23.55, -46.63], 12);
 
-[mapRest, mapMoto].forEach(m => {
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(m);
-});
+// Tile layers — começa com OSM padrão (sempre funciona, sem key)
+// Quando o usuário inserir a key GraphHopper, podemos usar tiles melhores.
+let tileLayerRest = null;
+let tileLayerMoto = null;
+
+function aplicarTiles() {
+  const key = obterApiKey();
+  // GraphHopper não tem tile server próprio; usamos OpenStreetMap padrão sempre.
+  // O mapa cinza era porque o CartoDB bloqueava sem referrer válido.
+  // OSM padrão funciona sem restrições.
+  const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const attr    = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+  [mapRest, mapMoto].forEach((m, i) => {
+    // Remove tile anterior se existir
+    const old = i === 0 ? tileLayerRest : tileLayerMoto;
+    if (old) m.removeLayer(old);
+    const tl = L.tileLayer(tileUrl, { attribution: attr, maxZoom: 19 }).addTo(m);
+    if (i === 0) tileLayerRest = tl; else tileLayerMoto = tl;
+  });
+}
+
+aplicarTiles();
 
 const mkIcon = emoji => L.divIcon({
   html: `<div style="font-size:26px;line-height:1;">${emoji}</div>`,
@@ -725,8 +918,99 @@ async function buscarEndereco(tipo) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// CALCULAR ROTA
+// GERENCIAMENTO DA API KEY GRAPHHOPPER
 // ═══════════════════════════════════════════════════════════
+function obterApiKey() {
+  return '55348d71-d3d0-4300-856f-6ae996b3d9ca';
+}
+
+function salvarApiKey() {
+  const key = obterApiKey();
+  const statusEl = document.getElementById('ghKeyStatus');
+  if (key.length > 10) {
+    statusEl.style.color = 'var(--verde)';
+    statusEl.textContent = '✅ Key salva — use Calcular Rota para testar.';
+  } else {
+    statusEl.style.color = 'var(--texto-muted)';
+    statusEl.textContent = '⚠️ Sem key: rotas GraphHopper indisponíveis. Crie grátis em graphhopper.com → Dashboard → API Keys.';
+  }
+}
+
+async function testarApiKey() {
+  const key = obterApiKey();
+  const statusEl = document.getElementById('ghKeyStatus');
+  if (!key) { statusEl.style.color='var(--vermelho)'; statusEl.textContent = '❌ Cole a key primeiro.'; return; }
+  statusEl.style.color = 'var(--texto-muted)'; statusEl.textContent = '⏳ Testando...';
+  try {
+    // Rota curta em SP para testar
+    const r = await fetch(`https://graphhopper.com/api/1/route?point=-23.55,-46.63&point=-23.56,-46.64&profile=car&points_encoded=false&key=${encodeURIComponent(key)}`);
+    const d = await r.json();
+    if (d.paths?.length) {
+      statusEl.style.color = 'var(--verde)';
+      statusEl.textContent = '✅ Key válida! Rotas e navegação ativadas.';
+    } else {
+      statusEl.style.color = 'var(--vermelho)';
+      statusEl.textContent = `❌ Key inválida: ${d.message || 'erro desconhecido'}`;
+    }
+  } catch {
+    statusEl.style.color = 'var(--vermelho)';
+    statusEl.textContent = '❌ Erro de conexão ao testar key.';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALCULAR ROTA (GraphHopper) — retorna distKm, coords, instruções
+// ═══════════════════════════════════════════════════════════
+
+// Ícones de manobra do GraphHopper → emoji
+const TURN_ICONS = {
+  'turn-sharp-left':  '↰', 'turn-left':  '←', 'turn-slight-left':  '↖',
+  'turn-sharp-right': '↱', 'turn-right': '→', 'turn-slight-right': '↗',
+  'continue':     '⬆', 'finish': '🏁', 'reached_via': '📍',
+  'roundabout':   '🔄', 'leave_roundabout': '↪', 'use_roundabout': '🔄',
+  'keep-left':    '↙', 'keep-right': '↘',
+  'u_turn_unknown': '↩', 'u_turn_left': '↩', 'u_turn_right': '↪',
+};
+
+function iconeTurn(sign, text) {
+  // sign é o número de código GH; text é o nome textual
+  if (text) {
+    for (const [k, v] of Object.entries(TURN_ICONS)) {
+      if (text.toLowerCase().includes(k.replace(/-/g,' ').split(' ')[0])) return v;
+    }
+  }
+  // fallback pelo código numérico
+  const map = { '-3':'↰','-2':'←','-1':'↖','0':'⬆','1':'↗','2':'→','3':'↱','4':'🏁','5':'📍','6':'🔄','7':'↪' };
+  return map[String(sign)] || '⬆';
+}
+
+function formatDist(m) {
+  if (m < 1000) return `${Math.round(m)} m`;
+  return `${(m/1000).toFixed(1)} km`;
+}
+
+async function ghRoute(points) {
+  const key = obterApiKey();
+  if (!key) throw new Error('SEM_KEY');
+
+  const pts = points.map(p => `point=${p.lat},${p.lng}`).join('&');
+  const url = `https://graphhopper.com/api/1/route?${pts}&profile=car&points_encoded=false&instructions=true&locale=pt_BR&key=${encodeURIComponent(key)}`;
+  const r = await fetch(url);
+  const d = await r.json();
+  if (!d.paths?.length) throw new Error(d.message || 'Rota não encontrada');
+  const path   = d.paths[0];
+  const distKm = path.distance / 1000;
+  const coords = path.points.coordinates.map(c => [c[1], c[0]]);
+  const instrucoes = (path.instructions || []).map(inst => ({
+    texto:       inst.text || '',
+    sign:        inst.sign,
+    distancia:   inst.distance || 0,
+    tempo:       inst.time || 0,
+    rua:         inst.street_name || '',
+  }));
+  return { distKm, coords, instrucoes };
+}
+
 async function calcularRota(modo) {
   let o, d;
   if (modo === 'rest') {
@@ -740,25 +1024,24 @@ async function calcularRota(modo) {
   if (!o || !d) { mostrarToast('Defina origem e destino primeiro!', 'erro'); return; }
 
   try {
-    const url  = `https://router.project-osrm.org/route/v1/driving/${o.lng},${o.lat};${d.lng},${d.lat}?overview=full&geometries=geojson`;
-    const resp = await fetch(url);
-    const data = await resp.json();
-    if (!data.routes?.length) { mostrarToast('Rota não encontrada', 'erro'); return; }
-
-    const coords = data.routes[0].geometry.coordinates.map(c => [c[1],c[0]]);
-    const distKm = data.routes[0].distance / 1000;
+    const resultado = await ghRoute([o, d]);
+    const { distKm, coords } = resultado;
     const mapAlvo = modo === 'rest' ? mapRest : mapMoto;
 
     if (lyr[modo].rota) mapAlvo.removeLayer(lyr[modo].rota);
-    lyr[modo].rota = L.polyline(coords, { color:'#ff6b00', weight:4, opacity:0.85 }).addTo(mapAlvo);
+    lyr[modo].rota = L.polyline(coords, { color:'#ff6b00', weight:5, opacity:0.9 }).addTo(mapAlvo);
     mapAlvo.fitBounds(lyr[modo].rota.getBounds(), { padding:[28,28] });
 
     if (modo === 'rest') distAtualKm = distKm;
 
     atualizarInfoEntrega(modo, distKm);
     mostrarToast(`Rota: ${distKm.toFixed(2)} km · ${calcularTempoMinutos(distKm)} min · R$ ${calcularPrecoEntrega(distKm).toFixed(2)}`);
-  } catch {
-    mostrarToast('Erro ao calcular rota', 'erro');
+  } catch(e) {
+    if (e.message === 'SEM_KEY') {
+      mostrarToast('Cole sua API Key GraphHopper na barra no topo!', 'erro');
+    } else {
+      mostrarToast('Erro ao calcular rota: ' + e.message, 'erro');
+    }
   }
 }
 
@@ -813,6 +1096,7 @@ function limparMapa(modo) {
   } else {
     pedidoSelecionadoId = null;
     rotaCombinadaCache = null;
+    renderizarInstrucoes();
   }
   atualizarInfoEntrega(modo, null);
   if (modo === 'moto') atualizarParadasMotoboy();
@@ -1203,13 +1487,11 @@ function renderizarRotasMotoboy() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ROTA MULTI-STOP (OSRM trip endpoint para TSP)
-// Recebe lista de pedidos aceitos, retorna rota otimizada:
-// origem do 1º restaurante → outras paradas na melhor ordem.
-// Como cada pedido tem origem (restaurante) e destino (cliente),
-// montamos um waypoint para cada um na sequência: pega-comida-1 →
-// entrega-1 → pega-comida-2 → entrega-2 ... mas usando o OSRM trip
-// para reordenar e achar o menor caminho.
+// ROTA MULTI-STOP via GraphHopper
+// Recebe lista de pedidos aceitos, retorna rota otimizada.
+// Lógica: pickup(X) sempre antes de dropoff(X).
+// Testa todas as permutações válidas via haversine (rápido),
+// depois chama GraphHopper uma vez com a melhor ordem.
 // ═══════════════════════════════════════════════════════════
 async function calcularRotaCombinada(pedidosAceitos) {
   // Para cada pedido construímos 2 paradas: pickup (origem) e dropoff (destino)
@@ -1223,23 +1505,21 @@ async function calcularRotaCombinada(pedidosAceitos) {
   // ir restaurante mais próximo primeiro, e depois entregar o cliente mais
   // próximo, sempre respeitando que só posso entregar o que já peguei.
 
-  // Caso simples: 1 pedido só → rota direta
+  // Caso simples: 1 pedido só → rota direta via GraphHopper
   if (pedidosAceitos.length === 1) {
     const p = pedidosAceitos[0];
-    const url = `https://router.project-osrm.org/route/v1/driving/${p.origem.lng},${p.origem.lat};${p.destino.lng},${p.destino.lat}?overview=full&geometries=geojson`;
-    const r = await fetch(url);
-    const d = await r.json();
-    if (!d.routes?.length) throw new Error('Rota não encontrada');
-    const distKm = d.routes[0].distance / 1000;
+    const resultado = await ghRoute([p.origem, p.destino]);
+    const { distKm, coords, instrucoes } = resultado;
     return {
       ids: [p.id],
       paradas: [
         { tipo: 'pickup',  pedidoId: p.id, lat: p.origem.lat,  lng: p.origem.lng,  nome: p.origem.nome },
         { tipo: 'dropoff', pedidoId: p.id, lat: p.destino.lat, lng: p.destino.lng, nome: p.destino.nome }
       ],
-      coords: d.routes[0].geometry.coordinates.map(c => [c[1], c[0]]),
+      coords,
       distKm,
-      tempoMin: calcularTempoMinutos(distKm)
+      tempoMin: calcularTempoMinutos(distKm),
+      instrucoes: [{ pedidoId: p.id, tipo: 'trecho', steps: instrucoes }]
     };
   }
 
@@ -1292,20 +1572,34 @@ async function calcularRotaCombinada(pedidosAceitos) {
     if (!melhor || total < melhor.dist) melhor = { seq: perm, dist: total };
   }
 
-  // Agora chamar OSRM uma única vez com a melhor ordem encontrada para obter rota real
-  const coords = melhor.seq.map(s => `${s.lng},${s.lat}`).join(';');
-  const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
-  const r = await fetch(url);
-  const d = await r.json();
-  if (!d.routes?.length) throw new Error('Rota combinada não encontrada');
-  const distKm = d.routes[0].distance / 1000;
+  // Agora chamar GraphHopper uma única vez com a melhor ordem encontrada para obter rota real
+  const resultado = await ghRoute(melhor.seq);
+  const { distKm, coords, instrucoes } = resultado;
+
+  // Para multi-stop, associar instruções a cada segmento entre paradas
+  // (GH retorna instrução com via_point para identificar as paradas intermediárias)
+  const instrucoesPorParada = [];
+  let segAtual = [];
+  let paradaIdx = 0;
+  for (const step of instrucoes) {
+    segAtual.push(step);
+    if (step.sign === 5 && paradaIdx < melhor.seq.length - 1) { // reached_via
+      instrucoesPorParada.push({ pedidoId: melhor.seq[paradaIdx].pedidoId, tipo: melhor.seq[paradaIdx].tipo, steps: segAtual });
+      segAtual = [];
+      paradaIdx++;
+    }
+  }
+  if (segAtual.length) {
+    instrucoesPorParada.push({ pedidoId: melhor.seq[paradaIdx]?.pedidoId, tipo: melhor.seq[paradaIdx]?.tipo, steps: segAtual });
+  }
 
   return {
     ids: pedidosIds,
     paradas: melhor.seq,
-    coords: d.routes[0].geometry.coordinates.map(c => [c[1], c[0]]),
+    coords,
     distKm,
-    tempoMin: calcularTempoMinutos(distKm)
+    tempoMin: calcularTempoMinutos(distKm),
+    instrucoes: instrucoesPorParada
   };
 }
 
@@ -1325,13 +1619,19 @@ async function aceitarRota(id) {
   }
 
   // ─── Validação 2: simular se a rota combinada cabe nos 20 km ───
+  if (!obterApiKey()) {
+    mostrarToast('Cole sua API Key GraphHopper na barra no topo para calcular rotas!', 'erro');
+    return;
+  }
+
   const simulacao = [...aceitosAtuais, p];
   mostrarToast('Calculando rota...', 'info');
   let rotaSim;
   try {
     rotaSim = await calcularRotaCombinada(simulacao);
-  } catch {
-    mostrarToast('Erro ao calcular rota combinada', 'erro');
+  } catch(e) {
+    if (e.message === 'SEM_KEY') mostrarToast('Cole sua API Key GraphHopper no topo!', 'erro');
+    else mostrarToast('Erro ao calcular rota combinada', 'erro');
     return;
   }
 
@@ -1409,6 +1709,7 @@ function desenharRotaCombinadaNoMapa() {
   // Atualizar infos
   atualizarInfoEntrega('moto', rotaCombinadaCache.distKm);
   atualizarParadasMotoboy();
+  renderizarInstrucoes();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1448,6 +1749,18 @@ async function confirmarEntrega(id) {
   p.status = 'entregue';
   p.entregueEm = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
 
+  // ─── Acumular métricas do dia ───
+  metricas.motoboy.ganhos       += p.precoEntrega;
+  metricas.motoboy.kmPercorridos += p.distKm;
+  metricas.motoboy.entregasFeitas++;
+
+  metricas.rest.lucroTotal      += p.lucroTotal;
+  metricas.rest.vendasTotal     += p.vendaTotal;
+  metricas.rest.pedidosEntregues++;
+  metricas.rest.custoEntregas   = (metricas.rest.custoEntregas || 0) + p.precoEntrega;
+
+  atualizarDashboards();
+
   // Recalcular rota combinada com os que ainda estão aceitos
   const restantes = pedidos.filter(x => x.status === 'aceito');
   if (restantes.length) {
@@ -1456,7 +1769,6 @@ async function confirmarEntrega(id) {
       desenharRotaCombinadaNoMapa();
     } catch {}
   } else {
-    // sem nenhum aceito, limpa o mapa
     rotaCombinadaCache = null;
     pedidoSelecionadoId = null;
     ['origem','destino','rota'].forEach(k => {
@@ -1470,6 +1782,129 @@ async function confirmarEntrega(id) {
   renderizarPedidosPublicados();
   renderizarRotasMotoboy();
   mostrarToast(`Entrega confirmada! +R$ ${p.precoEntrega.toFixed(2)}`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARDS DO DIA
+// ═══════════════════════════════════════════════════════════
+function fmt(val) {
+  return `R$ ${val.toFixed(2).replace('.', ',')}`;
+}
+
+function atualizarDashboards() {
+  const m = metricas;
+
+  // ── Motoboy ──
+  const media = m.motoboy.entregasFeitas
+    ? m.motoboy.ganhos / m.motoboy.entregasFeitas
+    : 0;
+  document.getElementById('dmGanhos').textContent   = fmt(m.motoboy.ganhos);
+  document.getElementById('dmKm').textContent       = `${m.motoboy.kmPercorridos.toFixed(1)} km`;
+  document.getElementById('dmEntregas').textContent = m.motoboy.entregasFeitas;
+  document.getElementById('dmMedia').textContent    = fmt(media);
+
+  // Histórico por entrega
+  const entregues = pedidos.filter(p => p.status === 'entregue');
+  document.getElementById('dmHistorico').innerHTML = entregues.length ? `
+    <div style="font-size:11px;color:var(--texto-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Histórico de entregas</div>
+    ${entregues.map(p => `
+      <div class="item-row">
+        <div class="item-row-left">
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--amarelo);">#${p.id.toString().slice(-4)}</span>
+          <div style="font-size:12px;">
+            <div>${p.origem.nome.slice(0,30)}${p.origem.nome.length>30?'…':''}</div>
+            <div style="color:var(--texto-muted);">${p.entregueEm || ''} · ${p.distKm.toFixed(2)} km</div>
+          </div>
+        </div>
+        <div class="item-row-right">
+          <span class="lucro-chip">+${fmt(p.precoEntrega)}</span>
+        </div>
+      </div>
+    `).join('')}
+  ` : '';
+
+  // ── Restaurante ──
+  document.getElementById('drLucro').textContent         = fmt(m.rest.lucroTotal);
+  document.getElementById('drVendas').textContent        = fmt(m.rest.vendasTotal);
+  document.getElementById('drPedidos').textContent       = m.rest.pedidosEntregues;
+  document.getElementById('drCustoEntregas').textContent = fmt(m.rest.custoEntregas || 0);
+}
+
+// ═══════════════════════════════════════════════════════════
+// INSTRUCOES PASSO A PASSO
+// ═══════════════════════════════════════════════════════════
+let instrucoesFechado = false;
+
+function toggleInstrucoes() {
+  instrucoesFechado = !instrucoesFechado;
+  document.getElementById('instrucoes-body').classList.toggle('fechado', instrucoesFechado);
+  document.getElementById('instrucoes-icon').classList.toggle('fechado', instrucoesFechado);
+}
+
+function renderizarInstrucoes() {
+  const body    = document.getElementById('instrucoes-body');
+  const resumo  = document.getElementById('instrucoes-resumo');
+  const cache   = rotaCombinadaCache;
+
+  if (!cache || !cache.instrucoes?.length) {
+    body.innerHTML = '<div class="empty" style="padding:28px;"><div class="empty-icon">🗺️</div>Aceite e visualize uma rota para ver as instruções aqui.</div>';
+    resumo.textContent = 'Aceite uma rota para ver as instruções';
+    return;
+  }
+
+  const totalSteps = cache.instrucoes.reduce((s, seg) => s + seg.steps.length, 0);
+  resumo.textContent = `${totalSteps} passos · ${cache.distKm.toFixed(2)} km · ${cache.tempoMin} min`;
+
+  // Montar HTML de todas as instruções segmentadas por parada
+  const partes = [];
+  const paradas = cache.paradas;
+  let paradaIdx = 0;
+
+  for (const seg of cache.instrucoes) {
+    // Cabeçalho da parada de destino do segmento
+    const destParada = seg.tipo === 'trecho'
+      ? paradas[paradas.length - 1]
+      : paradas.find(p => p.pedidoId === seg.pedidoId && p.tipo === seg.tipo);
+
+    if (destParada || seg.tipo === 'trecho') {
+      const parada = destParada || paradas[paradaIdx] || {};
+      const eTipo  = parada.tipo === 'pickup' ? 'pickup' : parada.tipo === 'dropoff' ? 'dropoff' : '';
+      const eIco   = parada.tipo === 'pickup' ? '🍽️ Retirar' : parada.tipo === 'dropoff' ? '📍 Entregar' : '🏁 Fim';
+      const eLabel = `${eIco} — Pedido #${(parada.pedidoId || 0).toString().slice(-4)}`;
+      partes.push(`<div class="step-parada-label">${eLabel}<span style="font-size:11px;color:var(--texto-muted);font-family:'DM Sans',sans-serif;font-weight:400;">${parada.nome || ''}</span></div>`);
+      paradaIdx++;
+    }
+
+    // Passos do segmento
+    for (let i = 0; i < seg.steps.length; i++) {
+      const step = seg.steps[i];
+      const eFim = step.sign === 4; // finish
+      const eVia = step.sign === 5; // reached_via
+      const ico  = iconeTurn(step.sign, step.texto);
+
+      const numCls = eFim ? 'dropoff' : eVia ? 'pickup' : '';
+      const distTxt = step.distancia > 5 ? `<div class="step-dist">📏 ${formatDist(step.distancia)}</div>` : '';
+
+      // Nome da rua: priorizar step.rua, senão extrair do texto
+      const rua = step.rua
+        || (step.texto.match(/(?:pela|na|até a?|por)\s+(.+)/i)?.[1] || '');
+
+      const textoLimpo = step.texto.replace(/\s*\[.*?\]/g,'').trim();
+
+      partes.push(`
+        <div class="instrucao-step">
+          <span class="step-icon-turn">${ico}</span>
+          <div class="step-text">
+            ${rua ? `<div class="step-street">${rua}</div>` : ''}
+            <div class="step-detail">${textoLimpo}</div>
+            ${distTxt}
+          </div>
+        </div>
+      `);
+    }
+  }
+
+  body.innerHTML = partes.join('');
 }
 
 // ═══════════════════════════════════════════════════════════
